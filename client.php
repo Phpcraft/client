@@ -8,7 +8,7 @@ require "vendor/autoload.php";
 use pas\
 {pas, stdin};
 use Phpcraft\
-{Account, AssetsManager, Command\Command, Connection, Event\ClientConsoleEvent, Event\ClientJoinEvent, Event\ClientPacketEvent, FancyUserInterface, Packet\ClientboundPacketId, Packet\KeepAliveRequestPacket, Packet\PluginMessage\ServerboundBrandPluginMessagePacket, Phpcraft, PlainUserInterface, PluginManager, Point3D, ServerConnection, Versions};
+{Account, AssetsManager, ChatComponent, Command\Command, Connection, Event\ClientConsoleEvent, Event\ClientJoinEvent, Event\ClientPacketEvent, FancyUserInterface, Packet\ClientboundPacketId, Packet\KeepAliveRequestPacket, Packet\PluginMessage\ServerboundBrandPluginMessagePacket, Phpcraft, PlainUserInterface, PluginManager, Point3D, ServerConnection, Versions};
 $options = [];
 for($i = 1; $i < count($argv); $i++)
 {
@@ -69,30 +69,16 @@ for($i = 1; $i < count($argv); $i++)
 			die("Unknown argument '{$n}' -- try 'help' for a list of arguments.\n");
 	}
 }
-$am = AssetsManager::fromMinecraftVersion(Versions::minecraft(false)[0]);
+$am = AssetsManager::latest();
 if(empty($options["lang"]))
 {
-	$options["lang"] = "en_GB";
+	ChatComponent::downloadTranslations();
 }
-else
+else if(!ChatComponent::downloadTranslations($options["lang"]))
 {
-	$arr = explode("_", $options["lang"]);
-	if(count($arr) != 2)
-	{
-		echo "'".$options["lang"]."' is not a valid language code, using en_GB.\n";
-		$options["lang"] = "en_GB";
-	}
-	else
-	{
-		$options["lang"] = strtolower($arr[0])."_".strtoupper($arr[1]);
-		if(!$am->doesAssetExist("minecraft/lang/".strtolower($options["lang"]).".json"))
-		{
-			echo "Couldn't find translations for ".$options["lang"].", using en_GB.\n";
-			$options["lang"] = "en_GB";
-		}
-	}
+	echo "Couldn't download translations for ".$options["lang"].", using en_GB.\n";
+	ChatComponent::downloadTranslations("en_GB");
 }
-$translations = json_decode(file_get_contents($am->downloadAsset("minecraft/lang/".strtolower($options["lang"]).".json")), true);
 $online = false;
 stdin::init(null, false);
 if(isset($options["online"]) && $options["online"] === true)
@@ -275,7 +261,7 @@ $ui->tabcomplete_function = function(string $word)
 pas::on("stdin_line", "handleConsoleMessage");
 pas::add(function()
 {
-	global $ui, $con, $protocol_version, $translations, $options, $reconnect, $players, $yaw, $pitch, $_x, $_y, $_z, $_yaw, $_pitch, $motion_x, $motion_y, $motion_z, $entityId, $entities, $followEntity, $dimension, $posticks, $loop, $onGround;
+	global $ui, $con, $protocol_version, $options, $reconnect, $players, $yaw, $pitch, $_x, $_y, $_z, $_yaw, $_pitch, $motion_x, $motion_y, $motion_z, $entityId, $entities, $followEntity, $dimension, $posticks, $loop, $onGround;
 	/**
 	 * @var ServerConnection $con
 	 */
@@ -293,10 +279,10 @@ pas::add(function()
 		}
 		if($packetId->name == "clientbound_chat_message")
 		{
-			$message = $con->readString();
+			$message = $con->readChat();
 			if($con->readByte() != 2)
 			{
-				$ui->add(Phpcraft::chatToText(json_decode($message, true), Phpcraft::FORMAT_ANSI, $translations));
+				$ui->add($message->toString(ChatComponent::FORMAT_ANSI));
 			}
 		}
 		else if($packetId->name == "player_info")
@@ -598,7 +584,7 @@ pas::add(function()
 		}
 		else if($packetId->name == "disconnect")
 		{
-			$ui->add("Server closed connection: ".Phpcraft::chatToText($con->readString(), Phpcraft::FORMAT_ANSI))
+			$ui->add("Server closed connection: ".$con->readChat()->toString(ChatComponent::FORMAT_ANSI))
 			   ->render();
 			$reconnect = !isset($options["noreconnect"]);
 		}
@@ -763,7 +749,7 @@ do
 	$ui->append("Connection established.")
 	   ->add("Logging in... ")
 	   ->render();
-	if($error = $con->login($account, $translations))
+	if($error = $con->login($account))
 	{
 		$ui->add($error)
 		   ->render();
