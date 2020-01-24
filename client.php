@@ -5,8 +5,8 @@ if(empty($argv))
 	die("This is for PHP-CLI. Connect to your server via SSH and use `php client.php`.\n");
 }
 require "vendor/autoload.php";
-use pas\
-{pas, stdin};
+use Asyncore\
+{Asyncore, stdin};
 use Phpcraft\
 {Account, AssetsManager, ChatComponent, Command\Command, Connection, Event\ClientConsoleEvent, Event\ClientJoinEvent, Event\ClientPacketEvent, FancyUserInterface, Packet\ClientboundPacketId, Packet\KeepAliveRequestPacket, Packet\PluginMessage\ServerboundBrandPluginMessagePacket, Phpcraft, PlainUserInterface, PluginManager, Point3D, ServerConnection, Versions};
 $options = [];
@@ -258,8 +258,8 @@ $ui->tabcomplete_function = function(string $word)
 	}
 	return $completions;
 };
-pas::on("stdin_line", "handleConsoleMessage");
-pas::add(function()
+Asyncore::on("stdin_line", "handleConsoleMessage");
+Asyncore::add(function()
 {
 	global $ui, $con, $protocol_version, $options, $reconnect, $players, $yaw, $pitch, $_x, $_y, $_z, $_yaw, $_pitch, $motion_x, $motion_y, $motion_z, $entityId, $entities, $followEntity, $dimension, $posticks, $loop, $onGround;
 	/**
@@ -782,7 +782,7 @@ do
 	$dimension = 0;
 	$next_tick = false;
 	$posticks = 0;
-	pas::loop(function() use (&$reconnect, $con)
+	Asyncore::loop(function() use (&$reconnect, $con)
 	{
 		return !$reconnect && $con->isOpen();
 	});
