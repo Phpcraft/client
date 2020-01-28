@@ -73,11 +73,13 @@ $am = AssetsManager::latest();
 if(empty($options["lang"]))
 {
 	ChatComponent::downloadTranslations();
+	$options["lang"] = "en_GB";
 }
 else if(!ChatComponent::downloadTranslations($options["lang"]))
 {
 	echo "Couldn't download translations for ".$options["lang"].", using en_GB.\n";
 	ChatComponent::downloadTranslations("en_GB");
+	$options["lang"] = "en_GB";
 }
 $online = false;
 stdin::init(null, false);
@@ -259,7 +261,7 @@ $ui->tabcomplete_function = function(string $word)
 	return $completions;
 };
 Asyncore::on("stdin_line", "handleConsoleMessage");
-Asyncore::add(function()
+$loop = Asyncore::add(function()
 {
 	global $ui, $con, $protocol_version, $options, $reconnect, $players, $yaw, $pitch, $_x, $_y, $_z, $_yaw, $_pitch, $motion_x, $motion_y, $motion_z, $entityId, $entities, $followEntity, $dimension, $posticks, $loop, $onGround;
 	/**
