@@ -584,6 +584,10 @@ $loop = Asyncore::add(function()
 				   ->render();
 			}
 		}
+		else if($packetId->name == "set_compression")
+		{
+			$con->compression_threshold = $con->readVarInt();
+		}
 		else if($packetId->name == "disconnect")
 		{
 			$ui->add("Server closed connection: ".$con->readChat()->toString(ChatComponent::FORMAT_ANSI))
