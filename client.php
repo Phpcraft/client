@@ -272,7 +272,7 @@ $loop = Asyncore::add(function()
 		$packetId = ClientboundPacketId::getById($packet_id, $protocol_version);
 		if($packetId === null)
 		{
-			die("Invalid packet ID: $packet_id\n");
+			die("Invalid packet ID: ".dechex($packet_id)."\n");
 		}
 		if(PluginManager::fire(new ClientPacketEvent($con, $packetId)))
 		{
