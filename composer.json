@@ -1,8 +1,8 @@
 {
-    "require": {
+	"require": {
 		"php": "^7.1",
 		"ext-json": "*",
 		"ext-gmp": "*",
-        "craft/core": "^0.5"
-    }
+		"craft/core": "^0.5.19"
+	}
 }

@@ -8,7 +8,7 @@ require "vendor/autoload.php";
 use Asyncore\
 {Asyncore, stdin};
 use Phpcraft\
-{Account, AssetsManager, ChatComponent, Command\Command, Connection, Event\ClientConsoleEvent, Event\ClientJoinEvent, Event\ClientPacketEvent, FancyUserInterface, Packet\ClientboundPacketId, Packet\KeepAliveRequestPacket, Packet\PluginMessage\ServerboundBrandPluginMessagePacket, Phpcraft, PlainUserInterface, PluginManager, Point3D, ServerConnection, Versions};
+{Account, AssetsManager, ChatComponent, Command\Command, Connection, Event\ClientConsoleEvent, Event\ClientJoinEvent, Event\ClientPacketEvent, FancyUserInterface, Packet\ClientboundPacketId, Packet\KeepAliveRequestPacket, Packet\PluginMessage\ServerboundBrandPluginMessagePacket, PlainUserInterface, PluginManager, Point3D, ServerConnection, Versions};
 $options = [];
 for($i = 1; $i < count($argv); $i++)
 {
@@ -156,34 +156,12 @@ catch(RuntimeException $e)
 	echo "Since you're on PHP <7.2.0 or Windows <10.0.10586, the plain user interface is forcefully enabled.\n";
 	$ui = new PlainUserInterface("PHP Minecraft Client");
 }
-$ui->add("Resolving... ")
-   ->render();
-$server = Phpcraft::resolve($server);
-$serverarr = explode(":", $server);
-if(count($serverarr) != 2)
-{
-	$ui->append("Failed to resolve name. Got {$server}")
-	   ->render();
-	exit;
-}
-$ui->append("Resolved to {$server}")
+$server = ServerConnection::resolveAddress($server);
+$ui->append("Resolved to ".$server["hostname"].":".$server["port"])
    ->render();
 if(empty($options["version"]))
 {
-	$info = Phpcraft::getServerStatus($serverarr[0], intval($serverarr[1]), 3, Phpcraft::METHOD_MODERN);
-	if(empty($info))
-	{
-		$ui->add("Failed to connect to server.")
-		   ->render();
-		exit;
-	}
-	if(empty($info["version"]) || empty($info["version"]["protocol"]))
-	{
-		$ui->add("Invalid status: ".json_encode($info))
-		   ->render();
-		exit;
-	}
-	$protocol_version = $info["version"]["protocol"];
+	$protocol_version = ServerConnection::negotiateProtocolVersion($server["hostname"], $server["port"]);
 	if(!($minecraft_versions = Versions::protocolToMinecraft($protocol_version)))
 	{
 		$ui->add("This server uses an unknown protocol version: {$protocol_version}")
@@ -590,7 +568,8 @@ $loop = Asyncore::add(function()
 		}
 		else if($packetId->name == "disconnect")
 		{
-			$ui->add("Server closed connection: ".$con->readChat()->toString(ChatComponent::FORMAT_ANSI))
+			$ui->add("Server closed connection: ".$con->readChat()
+													  ->toString(ChatComponent::FORMAT_ANSI))
 			   ->render();
 			$reconnect = !isset($options["noreconnect"]);
 		}
@@ -749,9 +728,7 @@ do
 {
 	$ui->add("Connecting using {$minecraft_version}... ")
 	   ->render();
-	$stream = fsockopen($serverarr[0], intval($serverarr[1]), $errno, $errstr, 3) or die($errstr."\n");
-	$con = new ServerConnection($stream, $protocol_version);
-	$con->sendHandshake($serverarr[0], intval($serverarr[1]), Connection::STATE_LOGIN);
+	$con = ServerConnection::connect($server["hostname"], $server["port"], $protocol_version, Connection::STATE_LOGIN);
 	$ui->append("Connection established.")
 	   ->add("Logging in... ")
 	   ->render();
