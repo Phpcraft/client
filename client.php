@@ -543,6 +543,13 @@ $loop = Asyncore::add(function()
 				handleConsoleMessage($options["joinmsg"]);
 			}
 		}
+		else if($packetId->name == "chunk_data")
+		{
+			if($posticks === false)
+			{
+				$posticks = 0;
+			}
+		}
 		else if($packetId->name == "respawn")
 		{
 			if($protocol_version > 47)
@@ -717,7 +724,7 @@ $loop = Asyncore::add(function()
 			$posticks = 0;
 		}
 	}
-	else if($protocol_version <= 47 || ++$posticks == 20)
+	else if($protocol_version <= 47 || ($posticks !== false && ++$posticks == 20))
 	{
 		$con->startPacket("no_movement");
 		$con->writeBoolean($onGround);
@@ -764,7 +771,7 @@ do
 	$followEntity = false;
 	$dimension = 0;
 	$next_tick = false;
-	$posticks = 0;
+	$posticks = false;
 	Asyncore::loop(function() use (&$reconnect, $con)
 	{
 		return !$reconnect && $con->isOpen();
