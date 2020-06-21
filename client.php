@@ -571,7 +571,7 @@ $loop = Asyncore::add(function()
 		}
 		else if($packetId->name == "set_compression")
 		{
-			$con->compression_threshold = $con->readVarInt();
+			$con->compression_threshold = gmp_intval($con->readVarInt());
 		}
 		else if($packetId->name == "disconnect")
 		{
