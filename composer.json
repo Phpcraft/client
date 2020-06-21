@@ -1,6 +1,7 @@
 {
 	"require": {
 		"php": "^7.1",
+		"ext-curl": "*",
 		"ext-json": "*",
 		"ext-gmp": "*",
 		"craft/core": "^0.5.19"
